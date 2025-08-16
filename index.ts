@@ -12,10 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 5002;
 app.use(cors())
 app.use(express.json())
-// app.use(express.static(path.resolve(__dirname, "static")))
 app.use(fileUpload())
 app.use("/api", router)
-//errorHandler the lastest
 app.use(errorHandler)
 
 const start = async () => {
