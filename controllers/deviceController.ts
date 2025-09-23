@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import path from "path";
-import models from "../models/models";
+import {Device, DeviceInfo} from "../models/models";
 import ApiError from "../error/ApiError";
 import { v4 as uuidv4 } from "uuid";
 
@@ -39,7 +39,7 @@ class DeviceController {
         img.mv(filePath, (err) => (err ? reject(err) : resolve()));
       });
 
-      const device = await models.Device.create({
+      const device = await Device.create({
         name,
         price: numericPrice,
         brandId: numericBrandId,
@@ -54,7 +54,7 @@ class DeviceController {
           const parsed = typeof info === "string" ? JSON.parse(info) : info;
           if (Array.isArray(parsed)) {
             for (const i of parsed) {
-              await models.DeviceInfo.create({
+              await DeviceInfo.create({
                 title: i.title,
                 description: i.description,
                 deviceId: deviceId,
@@ -100,7 +100,7 @@ class DeviceController {
       if (brandId && !isNaN(Number(brandId))) where.brandId = Number(brandId);
       if (typeId && !isNaN(Number(typeId))) where.typeId = Number(typeId);
 
-      const devices = await models.Device.findAndCountAll({
+      const devices = await Device.findAndCountAll({
         where,
         limit: limitNum,
         offset: (pageNum - 1) * limitNum,
@@ -115,9 +115,9 @@ class DeviceController {
   async getOne(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const device = await models.Device.findOne({
+      const device = await Device.findOne({
         where: { id: Number(id) },
-        include: [{ model: models.DeviceInfo, as: "device_infos" }], 
+        include: [{ model: DeviceInfo, as: "device_infos" }], 
       });
       if (!device) return res.status(404).json({ message: "Device not found" });
       return res.json(device);

@@ -105,7 +105,7 @@ DeviceInfo.belongsTo(Device);
 Type.belongsToMany(Brand, { through: TypeBrand });
 Brand.belongsToMany(Type, { through: TypeBrand });
 
-export default {
+export {
   User,
   Basket,
   BasketDevice,

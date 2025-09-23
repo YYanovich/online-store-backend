@@ -1,18 +1,29 @@
-import {Request, Response} from "express"
-import models from "../models/models"
-import ApiError from "../error/ApiError"
+import { Request, Response, NextFunction } from "express";
+import { Type } from "../models/models";
+import ApiError from "../error/ApiError";
 
 class TypeController {
-    async create(req: Request, res: Response) {
-        const {name} = req.body
-        const type = await models.Type.create({name})
-        return res.json(type)
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { name } = req.body;
+      if (!name) {
+        return next(ApiError.badRequest("Не вказано назву типу"));
+      }
+      const type = await Type.create({ name });
+      return res.json(type);
+    } catch (e: any) {
+      return next(ApiError.internal(e.message));
     }
+  }
 
-    async getAll(req: Request, res: Response) {
-        const types = await models.Type.findAll()
-        return res.json(types)
+  async getAll(req: Request, res: Response, next: NextFunction) {
+    try {
+      const types = await Type.findAll();
+      return res.json(types);
+    } catch (e: any) {
+      return next(ApiError.internal(e.message));
     }
+  }
 }
 
-export default TypeController
+export default new TypeController();

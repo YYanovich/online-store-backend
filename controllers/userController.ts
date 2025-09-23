@@ -2,9 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import ApiError from "../error/ApiError";
 import bcrypt from "bcrypt";
 import { sign, verify } from "jsonwebtoken";
-import models from "../models/models";
-
-const { User, Basket } = models;
+import {User, Basket} from "../models/models";
 
 const JWT_SECRET = process.env.SECRET_KEY as string;
 const generateJWT = (id: number, email: string, role: string) => {
@@ -53,4 +51,4 @@ class UserController {
   }
 }
 
-export default UserController;
+export default new UserController();

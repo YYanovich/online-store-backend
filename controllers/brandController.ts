@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
-import models from "../models/models"
+import {Brand} from "../models/models"
 
 class BrandController {
     async create(req: Request, res: Response) {
         const {name} = req.body
-        const brand = await models.Brand.create({name})
+        const brand = await Brand.create({name})
         return res.json(brand)
     }
 
     async getAll(req: Request, res: Response) {
-        const brands = await models.Brand.findAll()
+        const brands = await Brand.findAll()
         return res.json(brands)
     }
 }
