@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import ApiError from "../error/ApiError";
 import bcrypt from "bcrypt";
 import { sign, verify } from "jsonwebtoken";
-import {User, Basket} from "../models/models";
+import { User, Basket } from "../models/models";
 
 const JWT_SECRET = process.env.SECRET_KEY as string;
 const generateJWT = (id: number, email: string, role: string) => {
