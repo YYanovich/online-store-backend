@@ -1,87 +1,61 @@
 import { Request, Response, NextFunction } from "express";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import path from "path";
-import {Device, DeviceInfo} from "../models/models";
+import { Device, DeviceInfo } from "../models/models";
 import ApiError from "../error/ApiError";
 import { v4 as uuidv4 } from "uuid";
+import { sequelize } from "../db";
 
 class DeviceController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, price, brandId, typeId, info } = req.body;
+      const result = await sequelize.transaction(async (t) => {
+        const { name, price, brandId, typeId, rating, info } = req.body;
 
-      const numericBrandId = Number(brandId);
-      const numericTypeId = Number(typeId);
-      const numericPrice = Number(price);
-
-      if (!name) {
-        return res.status(400).json({ message: "name є обовʼязковим" });
-      }
-      if (isNaN(numericPrice)) {
-        return res.status(400).json({ message: "price має бути числом" });
-      }
-      if (isNaN(numericBrandId) || isNaN(numericTypeId)) {
-        return res
-          .status(400)
-          .json({ message: "brandId і typeId мають бути числами" });
-      }
-
-      const files = req.files as fileUpload.FileArray | undefined;
-      if (!files || !files.img) {
-        return res.status(400).json({ message: "Image file is required" });
-      }
-
-      const img = files.img as UploadedFile;
-      const fileName = uuidv4() + ".jpg";
-      const filePath = path.resolve(__dirname, "..", "static", fileName);
-
-      await new Promise<void>((resolve, reject) => {
-        img.mv(filePath, (err) => (err ? reject(err) : resolve()));
-      });
-
-      const device = await Device.create({
-        name,
-        price: numericPrice,
-        brandId: numericBrandId,
-        typeId: numericTypeId,
-        img: fileName,
-      });
-
-      const deviceId = device.getDataValue("id") as number;
-
-      if (info) {
-        try {
-          const parsed = typeof info === "string" ? JSON.parse(info) : info;
-          if (Array.isArray(parsed)) {
-            for (const i of parsed) {
-              await DeviceInfo.create({
-                title: i.title,
-                description: i.description,
-                deviceId: deviceId,
-              });
-            }
-          }
-        } catch (err) {
-          return res
-            .status(400)
-            .json({ message: "info має бути валідним JSON масивом" });
+        if (!name || !price || !brandId || !typeId) {
+          throw ApiError.badRequest(
+            "Name, price, brandId and typeId are required"
+          );
         }
-      }
 
-      return res.json(device);
-    } catch (e: any) {
-      console.error("Device create error:", e);
+        const files = req.files as fileUpload.FileArray | undefined;
+        if (!files || !files.img) {
+          throw ApiError.badRequest("Image file is required");
+        }
 
-      if (
-        e?.name === "SequelizeUniqueConstraintError" ||
-        e?.name === "SequelizeValidationError"
-      ) {
-        const details = (e.errors || [])
-          .map((er: any) => er.message)
-          .join("; ");
-        return res.status(400).json({ message: "Validation error", details });
-      }
-      return next(ApiError.badRequest(e?.message || String(e)));
+        const img = files.img as UploadedFile;
+        const fileName = uuidv4() + ".jpg";
+        await img.mv(path.resolve(__dirname, "..", "static", fileName));
+
+        const device = await Device.create(
+          {
+            name,
+            price: Number(price),
+            brandId: Number(brandId),
+            typeId: Number(typeId),
+            rating: Number(rating) || 0, 
+            img: fileName,
+          },
+          { transaction: t }
+        );
+
+        if (info) {
+          await DeviceInfo.create(
+            {
+              name: "Description", 
+              description: info,
+              deviceId: device.id,
+            },
+            { transaction: t }
+          );
+        }
+
+        return device;
+      });
+
+      return res.json(result);
+    } catch (e) {
+      return next(e);
     }
   }
 
@@ -117,7 +91,7 @@ class DeviceController {
       const { id } = req.params;
       const device = await Device.findOne({
         where: { id: Number(id) },
-        include: [{ model: DeviceInfo, as: "device_infos" }], 
+        include: [{ model: DeviceInfo, as: "device_infos" }],
       });
       if (!device) return res.status(404).json({ message: "Device not found" });
       return res.json(device);

@@ -25,7 +25,10 @@ class UserController {
     const user = await User.create({ email, role, password: hashPassword });
     const basket = await Basket.create({ userId: user.id });
     const token = generateJWT(user.id, user.email, user.role);
-    return res.json({ token });
+    return res.json({
+      token,
+      user: { id: user.id, email: user.email, role: user.role },
+    });
   }
 
   async login(req: Request, res: Response, next: NextFunction) {
@@ -39,7 +42,10 @@ class UserController {
       return next(ApiError.internal("Не правильний пароль"));
     }
     const token = generateJWT(user.id, user.email, user.role);
-    return res.json({ token });
+    return res.json({
+      token,
+      user: { id: user.id, email: user.email, role: user.role },
+    });
   }
 
   async check(req: Request, res: Response, next: NextFunction) {
@@ -47,7 +53,10 @@ class UserController {
       return next(ApiError.internal("Не авторизований"));
     }
     const token = generateJWT(req.user.id, req.user.email, req.user.role);
-    return res.json({ token });
+    return res.json({
+      token,
+      user: { id: req.user.id, email: req.user.email, role: req.user.role },
+    });
   }
 }
 
